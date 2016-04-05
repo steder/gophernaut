@@ -52,7 +52,15 @@ func myHandler(w http.ResponseWriter, my_req *http.Request) {
 		req.URL.Scheme = target_url.Scheme
 		// TODO: adjust request host to assign the request to the appropriate child process
 		req.URL.Host = target_url.Host
+
+		// clean up but preserve trailing slash:
+		trailing := strings.HasSuffix(req.URL.Path, "/")
 		req.URL.Path = path.Join(target_url.Path, req.URL.Path)
+		if trailing && !strings.HasSuffix(req.URL.Path, "/") {
+			req.URL.Path += "/"
+		}
+
+		// preserve query string:
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
 		} else {
