@@ -20,10 +20,26 @@ func start_process(events chan int) {
 	command_parts := strings.Split(executable, " ")
 	command := exec.Command(command_parts[0], command_parts[1:]...)
 	fmt.Printf("Command: %v\n", command)
+
+	stdout, err := command.StdoutPipe()
+	if err != nil {
+		fmt.Println("Unable to read output from command...")
+	}
+	stderr, err := command.StderrPipe()
+	if err != nil {
+		fmt.Println("Unable to read output from command...")
+	}
+
 	command.Start()
-	_, ok := <-events
-	if !ok {
-		command.Process.Kill()
+
+	go io.Copy(os.Stdout, stdout)
+	go io.Copy(os.Stderr, stderr)
+
+	for {
+		_, ok := <-events
+		if !ok {
+			command.Process.Kill()
+		}
 	}
 }
 
