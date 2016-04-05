@@ -1,13 +1,17 @@
 package main
 
-import "fmt"
-import "html/template"
-import "net/http"
-import "net/http/httputil"
-import "net/url"
-import "os/exec"
-import "path"
-import "strings"
+import (
+	"fmt"
+	"html/template"
+	"io"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"os/exec"
+	"path"
+	"strings"
+)
 
 var hostname = fmt.Sprintf("http://127.0.0.1:%d", 8080)
 var executable string = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
