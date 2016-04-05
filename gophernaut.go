@@ -93,8 +93,8 @@ func myHandler(w http.ResponseWriter, my_req *http.Request) {
 
 func main() {
 	events_channel := make(chan int)
-	go start_process(events_channel)
-	fmt.Printf("Gophernaut is ready for eBusiness!\n")
+	go start_process(events_channel) // TODO MANY PROCESSES, MUCH POOLS
+	fmt.Printf("Gophernaut is gopher launch!\n")
 	http.ListenAndServe(":8483", http.HandlerFunc(myHandler))
 	// TODO: our own ReverseProxy implementation of at least, ServeHTTP so that we can
 	// monitor the response codes to track successes and failures
