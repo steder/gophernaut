@@ -43,8 +43,8 @@ func start_process(events chan int) {
 	}
 }
 
-func myHandler(w http.ResponseWriter, req *http.Request) {
-	request_path := req.URL.Path
+func myHandler(w http.ResponseWriter, my_req *http.Request) {
+	request_path := my_req.URL.Path
 
 	target_url, _ := url.Parse(hostname)
 	director := func(req *http.Request) {
@@ -68,19 +68,19 @@ func myHandler(w http.ResponseWriter, req *http.Request) {
 		admin_template.Execute(w, nil)
 	}
 
-	fmt.Printf("path: %s\n", request_path)
+	//fmt.Printf("path: %s\n", request_path)
 	switch {
 	case request_path == "/admin":
-		fmt.Printf("admin path...\n")
-		admin_handler(w, req)
+		//fmt.Printf("admin path...\n")
+		admin_handler(w, my_req)
 		return
 	case strings.HasPrefix(request_path, "/static"):
-		fmt.Printf("static path...\n")
-		static_handler.ServeHTTP(w, req)
+		//fmt.Printf("static path...\n")
+		static_handler.ServeHTTP(w, my_req)
 		return
 	}
-	fmt.Printf("proxy path...\n")
-	proxy.ServeHTTP(w, req)
+	//fmt.Printf("proxy path...\n")
+	proxy.ServeHTTP(w, my_req)
 }
 
 func main() {
