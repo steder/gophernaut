@@ -32,10 +32,9 @@ func start_process(events chan int) {
 		fmt.Println("Unable to read output from command...")
 	}
 
-	command.Start()
-
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
+	command.Start()
 
 	for {
 		_, ok := <-events
