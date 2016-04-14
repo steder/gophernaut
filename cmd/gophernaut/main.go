@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
+	"github.com/steder/gophernaut"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -92,33 +91,9 @@ func myHandler(w http.ResponseWriter, my_req *http.Request) {
 	proxy.ServeHTTP(w, my_req)
 }
 
-type Config struct {
-	Host string
-	Port int
-	/*
-	    	Debug bool
-	   	Pool struct {
-	   		Size int
-	   		Template struct {
-	   			Name string
-	   		}
-	   	}
-	*/
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func main() {
 	// Test reading a config yaml:
-	data, error := ioutil.ReadFile("etc/template.conf")
-	check(error)
-	c := Config{}
-	yaml.Unmarshal(data, &c)
-
+	c := gophernaut.ReadConfig()
 	fmt.Printf("Host %s and Port %d\n", c.Host, c.Port)
 
 	events_channel := make(chan int)
