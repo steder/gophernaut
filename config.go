@@ -1,10 +1,14 @@
 package gophernaut
 
 import (
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
+/*
+Config is a Gophernaught config structure used to parse gophernaut.conf
+*/
 type Config struct {
 	Host string
 	Port int
@@ -25,6 +29,9 @@ func check(e error) {
 	}
 }
 
+/*
+ReadConfig reads gophernaut.conf and returns a Config object
+*/
 func ReadConfig() *Config {
 	data, error := ioutil.ReadFile("etc/template.conf")
 	check(error)

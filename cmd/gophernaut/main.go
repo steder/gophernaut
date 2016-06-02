@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/steder/gophernaut"
 	"html/template"
 	"io"
 	"net/http"
@@ -12,14 +11,16 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+
+	"github.com/steder/gophernaut"
 )
 
 var hostname = fmt.Sprintf("http://127.0.0.1:%d", 8080)
-var executable string = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
+var executable = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
 
-func start_process(events chan int) {
-	command_parts := strings.Split(executable, " ")
-	command := exec.Command(command_parts[0], command_parts[1:]...)
+func startProcess(events chan int) {
+	commandParts := strings.Split(executable, " ")
+	command := exec.Command(commandParts[0], commandParts[1:]...)
 	fmt.Printf("Command: %v\n", command)
 
 	stdout, err := command.StdoutPipe()
@@ -43,19 +44,19 @@ func start_process(events chan int) {
 	}
 }
 
-func myHandler(w http.ResponseWriter, my_req *http.Request) {
-	request_path := my_req.URL.Path
+func myHandler(w http.ResponseWriter, myReq *http.Request) {
+	requestPath := myReq.URL.Path
 
-	target_url, _ := url.Parse(hostname)
+	targetURL, _ := url.Parse(hostname)
 	director := func(req *http.Request) {
-		targetQuery := target_url.RawQuery
-		req.URL.Scheme = target_url.Scheme
+		targetQuery := targetURL.RawQuery
+		req.URL.Scheme = targetURL.Scheme
 		// TODO: adjust request host to assign the request to the appropriate child process
-		req.URL.Host = target_url.Host
+		req.URL.Host = targetURL.Host
 
 		// clean up but preserve trailing slash:
 		trailing := strings.HasSuffix(req.URL.Path, "/")
-		req.URL.Path = path.Join(target_url.Path, req.URL.Path)
+		req.URL.Path = path.Join(targetURL.Path, req.URL.Path)
 		if trailing && !strings.HasSuffix(req.URL.Path, "/") {
 			req.URL.Path += "/"
 		}
@@ -70,25 +71,25 @@ func myHandler(w http.ResponseWriter, my_req *http.Request) {
 
 	proxy := &httputil.ReverseProxy{Director: director}
 
-	static_handler := http.StripPrefix("/static", http.FileServer(http.Dir("static")))
-	admin_template := template.Must(template.ParseFiles("templates/admin.html"))
-	admin_handler := func(w http.ResponseWriter, req *http.Request) {
-		admin_template.Execute(w, nil)
+	staticHandler := http.StripPrefix("/static", http.FileServer(http.Dir("static")))
+	adminTemplate := template.Must(template.ParseFiles("templates/admin.html"))
+	adminHandler := func(w http.ResponseWriter, req *http.Request) {
+		adminTemplate.Execute(w, nil)
 	}
 
 	//fmt.Printf("path: %s\n", request_path)
 	switch {
-	case request_path == "/admin":
+	case requestPath == "/admin":
 		//fmt.Printf("admin path...\n")
-		admin_handler(w, my_req)
+		adminHandler(w, myReq)
 		return
-	case strings.HasPrefix(request_path, "/static"):
+	case strings.HasPrefix(requestPath, "/static"):
 		//fmt.Printf("static path...\n")
-		static_handler.ServeHTTP(w, my_req)
+		staticHandler.ServeHTTP(w, myReq)
 		return
 	}
 	//fmt.Printf("proxy path...\n")
-	proxy.ServeHTTP(w, my_req)
+	proxy.ServeHTTP(w, myReq)
 }
 
 func main() {
@@ -96,8 +97,8 @@ func main() {
 	c := gophernaut.ReadConfig()
 	fmt.Printf("Host %s and Port %d\n", c.Host, c.Port)
 
-	events_channel := make(chan int)
-	go start_process(events_channel) // TODO MANY PROCESSES, MUCH POOLS
+	eventsChannel := make(chan int)
+	go startProcess(eventsChannel) // TODO MANY PROCESSES, MUCH POOLS
 	fmt.Printf("Gophernaut is gopher launch!\n")
 	http.ListenAndServe(":8483", http.HandlerFunc(myHandler))
 	// TODO: our own ReverseProxy implementation of at least, ServeHTTP so that we can
