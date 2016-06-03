@@ -4,5 +4,5 @@ go:
   - 1.6
 
 install:
-  - go get -d github.com/Masterminds/glide
+  - go get github.com/Masterminds/glide
   - glide install
