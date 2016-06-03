@@ -1,2 +1,2 @@
 all:
-	go build ...cmd/gophernaut
+	go build -o bin/gophernaut ...cmd/gophernaut
