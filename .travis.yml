@@ -2,3 +2,7 @@ language: go
 
 go:
   - 1.6
+
+install:
+  - go get -d github.com/Masterminds/glide
+  - glide install
