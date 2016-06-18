@@ -35,7 +35,7 @@ func (e Event) String() string {
 var hostname = fmt.Sprintf("http://127.0.0.1:%d", 8080)
 var executable = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
 
-func startProcess(control chan Event, events chan Event) {
+func startProcess(control <-chan Event, events chan<- Event) {
 	commandParts := strings.Split(executable, " ")
 	command := exec.Command(commandParts[0], commandParts[1:]...)
 	fmt.Printf("Command: %v\n", command)
