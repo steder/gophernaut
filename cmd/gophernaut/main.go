@@ -136,6 +136,7 @@ var requestCount = 0
 
 func myHandler(w http.ResponseWriter, myReq *http.Request) {
 	requestPath := myReq.URL.Path
+	// DONE: adjust request host to assign the request to the appropriate child process
 	// TODO: multiprocess, pick one of n hostnames based on pool status
 	hostname := hostnames[requestCount%len(hostnames)]
 	requestCount++
@@ -143,7 +144,6 @@ func myHandler(w http.ResponseWriter, myReq *http.Request) {
 	director := func(req *http.Request) {
 		targetQuery := targetURL.RawQuery
 		req.URL.Scheme = targetURL.Scheme
-		// TODO: adjust request host to assign the request to the appropriate child process
 		req.URL.Host = targetURL.Host
 
 		// clean up but preserve trailing slash:
