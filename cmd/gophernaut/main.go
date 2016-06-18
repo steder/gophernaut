@@ -84,6 +84,54 @@ func startProcess(control <-chan Event, events chan<- Event, executable string) 
 	}
 }
 
+// Pool manages the pool of processes to which gophernaut dispatches
+// requests.
+type Pool struct {
+	stoppedCount   int
+	processCount   int
+	controlChannel chan Event
+	eventsChannel  chan Event
+}
+
+// Start up the pool
+func (p *Pool) Start() {
+	p.controlChannel = make(chan Event)
+	p.eventsChannel = make(chan Event)
+
+	// Handle signals to try to do a graceful shutdown:
+	receivedSignals := make(chan os.Signal, 1)
+	signal.Notify(receivedSignals, os.Interrupt) // , syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		for sig := range receivedSignals {
+			fmt.Printf("Received signal, %s, shutting down workers...\n", sig)
+			break
+		}
+		close(p.controlChannel)
+		signal.Stop(receivedSignals)
+	}()
+
+	// Actually start some processes
+	for _, executable := range executables {
+		go startProcess(p.controlChannel, p.eventsChannel, executable)
+	}
+}
+
+// ManageProcesses manages soem processes
+func (p *Pool) ManageProcesses() {
+	for event := range p.eventsChannel {
+		switch event {
+		case Shutdown:
+			p.stoppedCount++
+		case Start:
+			p.processCount++
+		}
+		if p.processCount == p.stoppedCount {
+			log.Printf("%d workers stopped, shutting down.\n", p.processCount)
+			os.Exit(1)
+		}
+	}
+}
+
 var requestCount = 0
 
 func myHandler(w http.ResponseWriter, myReq *http.Request) {
@@ -138,45 +186,9 @@ func main() {
 	c := gophernaut.ReadConfig()
 	log.Printf("Host %s and Port %d\n", c.Host, c.Port)
 
-	controlChannel := make(chan Event)
-	eventsChannel := make(chan Event)
-
-	// Handle signals to try to do a graceful shutdown:
-	receivedSignals := make(chan os.Signal, 1)
-	signal.Notify(receivedSignals, os.Interrupt) // , syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		for sig := range receivedSignals {
-			fmt.Printf("Received signal, %s, shutting down workers...\n", sig)
-			break
-		}
-		close(controlChannel)
-		signal.Stop(receivedSignals)
-	}()
-
-	// Actually start some processes
-	for _, executable := range executables {
-		go startProcess(controlChannel, eventsChannel, executable)
-	}
-
-	// wait for child processes to exit before shutting down:
-
-	processCount := 0
-	stoppedCount := 0
-	go func() {
-		// TODO: turn this into a ProcessPool?
-		for event := range eventsChannel {
-			switch event {
-			case Shutdown:
-				stoppedCount++
-			case Start:
-				processCount++
-			}
-			if processCount == stoppedCount {
-				fmt.Printf("%d workers stopped, shutting down.\n", processCount)
-				os.Exit(1)
-			}
-		}
-	}()
+	pool := new(Pool)
+	pool.Start()
+	go pool.ManageProcesses()
 
 	log.Printf("Gophernaut is gopher launch!\n")
 	// TODO: our own ReverseProxy implementation of at least, ServeHTTP so that we can
