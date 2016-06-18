@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"html/template"
 	"io"
@@ -35,22 +36,33 @@ func (e Event) String() string {
 var hostname = fmt.Sprintf("http://127.0.0.1:%d", 8080)
 var executable = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
 
+func copyToLog(dst *log.Logger, src io.Reader) {
+	scanner := bufio.NewScanner(src)
+	for scanner.Scan() {
+		dst.Print(scanner.Text())
+	}
+}
+
 func startProcess(control <-chan Event, events chan<- Event) {
+	procLog := log.New(os.Stdout, "gopher-worker ", log.Ldate|log.Ltime)
+
 	commandParts := strings.Split(executable, " ")
 	command := exec.Command(commandParts[0], commandParts[1:]...)
-	fmt.Printf("Command: %v\n", command)
+	log.Printf("Command: %v\n", command)
 
 	stdout, err := command.StdoutPipe()
 	if err != nil {
-		fmt.Println("Unable to read output from command...")
+		procLog.Fatalln("Unable to connect to stdout from command...")
 	}
 	stderr, err := command.StderrPipe()
 	if err != nil {
-		fmt.Println("Unable to read output from command...")
+		procLog.Fatalln("Unable to connect to stderr from command...")
 	}
 
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
+	//go io.Copy(os.Stdout, stdout)
+	//go io.Copy(os.Stderr, stderr)
+	go copyToLog(procLog, stdout)
+	go copyToLog(procLog, stderr)
 	command.Start()
 
 	for {
@@ -97,25 +109,22 @@ func myHandler(w http.ResponseWriter, myReq *http.Request) {
 		adminTemplate.Execute(w, nil)
 	}
 
-	//fmt.Printf("path: %s\n", request_path)
 	switch {
 	case requestPath == "/admin":
-		//fmt.Printf("admin path...\n")
 		adminHandler(w, myReq)
 		return
 	case strings.HasPrefix(requestPath, "/static"):
-		//fmt.Printf("static path...\n")
 		staticHandler.ServeHTTP(w, myReq)
 		return
 	}
-	//fmt.Printf("proxy path...\n")
 	proxy.ServeHTTP(w, myReq)
 }
 
 func main() {
-	// Test reading a config yaml:
+	log.SetPrefix("gophernaut ")
+	log.SetFlags(log.Ldate | log.Ltime)
 	c := gophernaut.ReadConfig()
-	fmt.Printf("Host %s and Port %d\n", c.Host, c.Port)
+	log.Printf("Host %s and Port %d\n", c.Host, c.Port)
 
 	controlChannel := make(chan Event)
 	eventsChannel := make(chan Event)
@@ -150,7 +159,7 @@ func main() {
 		}
 	}()
 
-	fmt.Printf("Gophernaut is gopher launch!\n")
+	log.Printf("Gophernaut is gopher launch!\n")
 	// TODO: our own ReverseProxy implementation of at least, ServeHTTP so that we can
 	// monitor the response codes to track successes and failures
 	log.Fatal(http.ListenAndServe(":8483", http.HandlerFunc(myHandler)))
