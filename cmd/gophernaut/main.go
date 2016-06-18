@@ -72,6 +72,7 @@ func startProcess(control <-chan Event, events chan<- Event, executable string) 
 	go copyToLog(procLog, stderr)
 	command.Start()
 
+	events <- Start
 	for {
 		_, ok := <-control
 		if !ok {
@@ -158,12 +159,17 @@ func main() {
 	}
 
 	// wait for child processes to exit before shutting down:
-	processCount := len(executables)
+
+	processCount := 0
 	stoppedCount := 0
 	go func() {
+		// TODO: turn this into a ProcessPool?
 		for event := range eventsChannel {
-			if event == Shutdown {
+			switch event {
+			case Shutdown:
 				stoppedCount++
+			case Start:
+				processCount++
 			}
 			if processCount == stoppedCount {
 				fmt.Printf("%d workers stopped, shutting down.\n", processCount)
