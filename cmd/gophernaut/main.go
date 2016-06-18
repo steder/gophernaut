@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -18,22 +20,32 @@ import (
 var hostname = fmt.Sprintf("http://127.0.0.1:%d", 8080)
 var executable = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
 
+func copyToLog(dst *log.Logger, src io.Reader) {
+	scanner := bufio.NewScanner(src)
+	for scanner.Scan() {
+		dst.Print(scanner.Text())
+	}
+}
+
 func startProcess(events chan int) {
+	procLog := log.New(os.Stdout, "gopher-worker ", log.Ldate|log.Ltime)
 	commandParts := strings.Split(executable, " ")
 	command := exec.Command(commandParts[0], commandParts[1:]...)
 	fmt.Printf("Command: %v\n", command)
 
 	stdout, err := command.StdoutPipe()
 	if err != nil {
-		fmt.Println("Unable to read output from command...")
+		procLog.Fatalln("Unable to connect to stdout from command...")
 	}
 	stderr, err := command.StderrPipe()
 	if err != nil {
-		fmt.Println("Unable to read output from command...")
+		procLog.Fatalln("Unable to connect to stderr from command...")
 	}
 
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
+	//go io.Copy(os.Stdout, stdout)
+	//go io.Copy(os.Stderr, stderr)
+	go copyToLog(procLog, stdout)
+	go copyToLog(procLog, stderr)
 	command.Start()
 
 	for {
