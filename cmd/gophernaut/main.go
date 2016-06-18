@@ -33,9 +33,6 @@ func (e Event) String() string {
 	return fmt.Sprintf("Event(%d)", e)
 }
 
-var hostname = fmt.Sprintf("http://127.0.0.1:%d", 8080)
-var executable = fmt.Sprintf("python -m SimpleHTTPServer %d", 8080)
-
 var hostnames = []string{
 	fmt.Sprintf("http://127.0.0.1:%d", 8080),
 	fmt.Sprintf("http://127.0.0.1:%d", 8081),
@@ -91,7 +88,7 @@ var requestCount = 0
 func myHandler(w http.ResponseWriter, myReq *http.Request) {
 	requestPath := myReq.URL.Path
 	// TODO: multiprocess, pick one of n hostnames based on pool status
-	hostname := hostnames[requestCount%2] // TODO get rid of this hard coded 2
+	hostname := hostnames[requestCount%len(hostnames)]
 	requestCount++
 	targetURL, _ := url.Parse(hostname)
 	director := func(req *http.Request) {
@@ -161,7 +158,7 @@ func main() {
 	}
 
 	// wait for child processes to exit before shutting down:
-	processCount := 2 // TODO get rid of these hard coded 2s!
+	processCount := len(executables)
 	stoppedCount := 0
 	go func() {
 		for event := range eventsChannel {
