@@ -4,5 +4,7 @@ go:
   - 1.6
 
 install:
+  - go get golang.org/x/tools/cmd/stringer
   - go get github.com/Masterminds/glide
   - glide install
+  - ls vendor
