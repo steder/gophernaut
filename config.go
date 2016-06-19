@@ -1,6 +1,7 @@
 package gophernaut
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
@@ -38,4 +39,22 @@ func ReadConfig() *Config {
 	c := Config{}
 	yaml.Unmarshal(data, &c)
 	return &c
+}
+
+// GetExecutables uses our config to provide a set of processes to start
+func (c *Config) GetExecutables() []string {
+	var executables = []string{
+		fmt.Sprintf("python -m SimpleHTTPServer %d", 8080),
+		fmt.Sprintf("python -m SimpleHTTPServer %d", 8081),
+	}
+	return executables
+}
+
+// GetHostnames uses our config to provide a set of hostnames to dispatch requests to
+func (c *Config) GetHostnames() []string {
+	var hostnames = []string{
+		fmt.Sprintf("http://127.0.0.1:%d", 8080),
+		fmt.Sprintf("http://127.0.0.1:%d", 8081),
+	}
+	return hostnames
 }
