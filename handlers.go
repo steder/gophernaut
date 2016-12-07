@@ -51,9 +51,9 @@ func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
 
 		proxy := &httputil.ReverseProxy{Director: director}
 
-		fmt.Printf("WTF\n")
 		worker.StartRequest()
 		defer worker.CompleteRequest()
+
 		switch {
 		case requestPath == "/admin":
 			adminHandler(responseWriter, myReq)
@@ -62,6 +62,7 @@ func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
 			staticHandler.ServeHTTP(responseWriter, myReq)
 			return
 		}
+
 		proxy.ServeHTTP(responseWriter, myReq)
 	}
 
