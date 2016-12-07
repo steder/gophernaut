@@ -14,6 +14,12 @@ import (
 func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
 	var requestCount = 0
 
+	staticHandler := http.StripPrefix("/static", http.FileServer(http.Dir("static")))
+	adminTemplate := template.Must(template.ParseFiles("templates/admin.html"))
+	adminHandler := func(w http.ResponseWriter, req *http.Request) {
+		adminTemplate.Execute(w, nil)
+	}
+
 	myHandler := func(responseWriter http.ResponseWriter, myReq *http.Request) {
 		requestPath := myReq.URL.Path
 		// DONE: adjust request host to assign the request to the appropriate child process
@@ -22,6 +28,7 @@ func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
 		hostname := worker.Hostname
 		requestCount++
 		targetURL, _ := url.Parse(hostname)
+
 		director := func(req *http.Request) {
 			targetQuery := targetURL.RawQuery
 			req.URL.Scheme = targetURL.Scheme
@@ -43,12 +50,6 @@ func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		proxy := &httputil.ReverseProxy{Director: director}
-
-		staticHandler := http.StripPrefix("/static", http.FileServer(http.Dir("static")))
-		adminTemplate := template.Must(template.ParseFiles("templates/admin.html"))
-		adminHandler := func(w http.ResponseWriter, req *http.Request) {
-			adminTemplate.Execute(w, nil)
-		}
 
 		fmt.Printf("WTF\n")
 		worker.StartRequest()
