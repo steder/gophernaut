@@ -45,7 +45,7 @@ func (c *Config) GetExecutables() []string {
 	var executables []string
 	for x := 0; x < c.Pool.Size; x++ {
 		executables = append(executables,
-			fmt.Sprintf("python -m SimpleHTTPServer %d", 8080+x))
+			fmt.Sprintf(c.Pool.Template.Executable, 8080+x))
 	}
 	return executables
 }
@@ -55,7 +55,7 @@ func (c *Config) GetHostnames() []string {
 	var hostnames []string
 	for x := 0; x < c.Pool.Size; x++ {
 		hostnames = append(hostnames,
-			fmt.Sprintf("http://127.0.0.1:%d", 8080+x))
+			fmt.Sprintf(c.Pool.Template.Hostname, 8080+x))
 	}
 	return hostnames
 }
