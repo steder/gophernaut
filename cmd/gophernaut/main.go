@@ -30,5 +30,5 @@ func main() {
 	// TODO: our own ReverseProxy implementation of at least, ServeHTTP so that we can
 	// monitor the response codes to track successes and failures
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", c.Port),
-		http.HandlerFunc(gophernaut.GetGopherHandler(pool))))
+		http.HandlerFunc(gophernaut.GetGopherHandler(pool, c))))
 }

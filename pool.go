@@ -81,8 +81,12 @@ func (w *Worker) StartRequest() {
 
 func (w *Worker) CompleteRequest() {
 	w.busy = false
-	w.pool.workers <- w
+	w.pool.workerChannel <- w
 	log.Printf("Worker %s request %d complete!\n", w.Hostname, w.requestCount)
+}
+
+func (w *Worker) GetRequestCount() int {
+	return w.requestCount
 }
 
 // Pool manages the pool of Worker processes to which gophernaut dispatches
@@ -92,7 +96,8 @@ type Pool struct {
 	Hostnames   []string
 	Size        int
 
-	workers chan *Worker
+	Workers       []*Worker
+	workerChannel chan *Worker
 
 	requestCount   int
 	stoppedCount   int
@@ -105,7 +110,7 @@ type Pool struct {
 func (p *Pool) Start() {
 	p.controlChannel = make(chan Event)
 	p.eventsChannel = make(chan Event)
-	p.workers = make(chan *Worker, p.Size)
+	p.workerChannel = make(chan *Worker, p.Size)
 
 	// Handle signals to try to do a graceful shutdown:
 	receivedSignals := make(chan os.Signal, 1)
@@ -125,7 +130,8 @@ func (p *Pool) Start() {
 		log.Printf("creating worker...\n")
 		w := Worker{Hostname: p.Hostnames[index], pool: p}
 		log.Printf("Queuing worker...\n")
-		p.workers <- &w
+		p.workerChannel <- &w
+		p.Workers = append(p.Workers, &w)
 		log.Printf("Starting worker process...\n")
 		go startProcess(p.controlChannel, p.eventsChannel, executable)
 	}
@@ -134,7 +140,7 @@ func (p *Pool) Start() {
 func (p *Pool) GetWorker() *Worker {
 	p.requestCount += 1
 	log.Printf("Pool starting request %d...", p.requestCount)
-	return <-p.workers
+	return <-p.workerChannel
 }
 
 // ManageProcesses waits for processes to start waits for graceful shutdown

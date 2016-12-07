@@ -1,9 +1,50 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>Gophernaut Admin {{.Config.Host}}:{{.Config.Port}}</title>
+    <style type="text/css">
+      table, th, td {
+          border: 1px solid black;
+      }
+    </style>
   </head>
   <body>
-    <h1>Hello Gophernauts!</h1>
-    <img src="/static/images/gophernaut-helmet.png"></img>
+    <h1>Gophernaut Admin {{.Config.Host}}:{{.Config.Port}}</h1>
+    <h2>Hello Gophernauts!</h2>
+    <img src="/static/images/gophernaut-helmet.png" width="81" height="75"></img>
+    <table>
+      <thead>
+      <tr>
+          <th>hostname</th>
+          <th>PID</th>
+          <th>start time</th>
+          <th>status</th>
+          <th>requests processed</th>
+          <th>requests failed</th>
+          <th>last access</th>
+          <th>last error</th>
+          <th>active URI</th>
+      </tr>
+      </thead>
+      <tbody>
+      {{range .Pool.Workers}}
+      <tr>
+        <td>{{.Hostname}}</td>
+        <td>0</td>
+        <td>2016-12-07 12:46:37</td>
+        <td>busy</td>
+        <td>{{.GetRequestCount}}</td>
+        <td>0</td>
+        <td>2016-12-07 12:46:37</td>
+        <td></td>
+        <td>/admin</td>
+      </tr>
+      {{else}}
+      <tr>
+        <td rowspan="9">No workers</td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
   </body>
 </html>

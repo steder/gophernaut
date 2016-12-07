@@ -1,7 +1,6 @@
 package gophernaut
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httputil"
@@ -10,14 +9,20 @@ import (
 	"strings"
 )
 
+type AdminContext struct {
+	Pool   Pool
+	Config *Config
+}
+
 // GetGopherHandler ...
-func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
+func GetGopherHandler(pool Pool, config *Config) func(w http.ResponseWriter, r *http.Request) {
 	var requestCount = 0
 
 	staticHandler := http.StripPrefix("/static", http.FileServer(http.Dir("static")))
 	adminTemplate := template.Must(template.ParseFiles("templates/admin.html"))
 	adminHandler := func(w http.ResponseWriter, req *http.Request) {
-		adminTemplate.Execute(w, nil)
+		context := AdminContext{Pool: pool, Config: config}
+		adminTemplate.Execute(w, context)
 	}
 
 	myHandler := func(responseWriter http.ResponseWriter, myReq *http.Request) {
