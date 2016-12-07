@@ -49,8 +49,11 @@ func startProcess(control <-chan Event, events chan<- Event, executable string) 
 	//go io.Copy(os.Stderr, stderr)
 	go copyToLog(procLog, stdout)
 	go copyToLog(procLog, stderr)
+
+	// Actually start the subprocess and wait for it to startup
 	command.Start()
 
+	// Push an event onto the channel for manage processes to track the new process
 	events <- Start
 	for {
 		_, ok := <-control
@@ -63,11 +66,35 @@ func startProcess(control <-chan Event, events chan<- Event, executable string) 
 	}
 }
 
-// Pool manages the pool of processes to which gophernaut dispatches
+type Worker struct {
+	Hostname     string
+	requestCount int
+	pool         *Pool
+	busy         bool
+}
+
+func (w *Worker) StartRequest() {
+	w.busy = true
+	w.requestCount += 1
+	log.Printf("Worker %s request %d starting...\n", w.Hostname, w.requestCount)
+}
+
+func (w *Worker) CompleteRequest() {
+	w.busy = false
+	w.pool.workers <- w
+	log.Printf("Worker %s request %d complete!\n", w.Hostname, w.requestCount)
+}
+
+// Pool manages the pool of Worker processes to which gophernaut dispatches
 // requests.
 type Pool struct {
 	Executables []string
+	Hostnames   []string
+	Size        int
 
+	workers chan *Worker
+
+	requestCount   int
 	stoppedCount   int
 	processCount   int
 	controlChannel chan Event
@@ -78,6 +105,7 @@ type Pool struct {
 func (p *Pool) Start() {
 	p.controlChannel = make(chan Event)
 	p.eventsChannel = make(chan Event)
+	p.workers = make(chan *Worker, p.Size)
 
 	// Handle signals to try to do a graceful shutdown:
 	receivedSignals := make(chan os.Signal, 1)
@@ -91,13 +119,25 @@ func (p *Pool) Start() {
 		signal.Stop(receivedSignals)
 	}()
 
+	log.Printf("Starting processes... %d\n", len(p.Executables))
 	// Actually start some processes
-	for _, executable := range p.Executables {
+	for index, executable := range p.Executables {
+		log.Printf("creating worker...\n")
+		w := Worker{Hostname: p.Hostnames[index], pool: p}
+		log.Printf("Queuing worker...\n")
+		p.workers <- &w
+		log.Printf("Starting worker process...\n")
 		go startProcess(p.controlChannel, p.eventsChannel, executable)
 	}
 }
 
-// ManageProcesses manages soem processes
+func (p *Pool) GetWorker() *Worker {
+	p.requestCount += 1
+	log.Printf("Pool starting request %d...", p.requestCount)
+	return <-p.workers
+}
+
+// ManageProcesses waits for processes to start waits for graceful shutdown
 func (p *Pool) ManageProcesses() {
 	for event := range p.eventsChannel {
 		switch event {

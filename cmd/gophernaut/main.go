@@ -19,8 +19,10 @@ func main() {
 		c.Pool.Template.Executable,
 		c.Pool.Template.Hostname,
 	)
+	log.Printf("Creating pool...")
 
-	pool := gophernaut.Pool{Executables: c.GetExecutables()}
+	pool := gophernaut.Pool{Executables: c.GetExecutables(), Hostnames: c.GetHostnames(), Size: c.Pool.Size}
+	log.Printf("Starting pool...")
 	pool.Start()
 	go pool.ManageProcesses()
 
@@ -28,5 +30,5 @@ func main() {
 	// TODO: our own ReverseProxy implementation of at least, ServeHTTP so that we can
 	// monitor the response codes to track successes and failures
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", c.Port),
-		http.HandlerFunc(gophernaut.GetGopherHandler(c.GetHostnames()))))
+		http.HandlerFunc(gophernaut.GetGopherHandler(pool))))
 }

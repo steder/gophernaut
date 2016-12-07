@@ -1,6 +1,7 @@
 package gophernaut
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httputil"
@@ -10,14 +11,15 @@ import (
 )
 
 // GetGopherHandler ...
-func GetGopherHandler(hostnames []string) func(w http.ResponseWriter, r *http.Request) {
+func GetGopherHandler(pool Pool) func(w http.ResponseWriter, r *http.Request) {
 	var requestCount = 0
 
 	myHandler := func(responseWriter http.ResponseWriter, myReq *http.Request) {
 		requestPath := myReq.URL.Path
 		// DONE: adjust request host to assign the request to the appropriate child process
 		// TODO: multiprocess, pick one of n hostnames based on pool status
-		hostname := hostnames[requestCount%len(hostnames)]
+		worker := pool.GetWorker()
+		hostname := worker.Hostname
 		requestCount++
 		targetURL, _ := url.Parse(hostname)
 		director := func(req *http.Request) {
@@ -48,6 +50,9 @@ func GetGopherHandler(hostnames []string) func(w http.ResponseWriter, r *http.Re
 			adminTemplate.Execute(w, nil)
 		}
 
+		fmt.Printf("WTF\n")
+		worker.StartRequest()
+		defer worker.CompleteRequest()
 		switch {
 		case requestPath == "/admin":
 			adminHandler(responseWriter, myReq)
