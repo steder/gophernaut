@@ -45,8 +45,6 @@ func startProcess(control <-chan Event, events chan<- Event, executable string) 
 		procLog.Fatalln("Unable to connect to stderr from command...")
 	}
 
-	//go io.Copy(os.Stdout, stdout)
-	//go io.Copy(os.Stderr, stderr)
 	go copyToLog(procLog, stdout)
 	go copyToLog(procLog, stderr)
 
@@ -66,6 +64,7 @@ func startProcess(control <-chan Event, events chan<- Event, executable string) 
 	}
 }
 
+// Worker ...
 type Worker struct {
 	Hostname     string
 	requestCount int
@@ -73,18 +72,21 @@ type Worker struct {
 	busy         bool
 }
 
+// StartRequest marks this work as busy
 func (w *Worker) StartRequest() {
 	w.busy = true
-	w.requestCount += 1
+	w.requestCount++
 	log.Printf("Worker %s request %d starting...\n", w.Hostname, w.requestCount)
 }
 
+// CompleteRequest frees this worker
 func (w *Worker) CompleteRequest() {
 	w.busy = false
 	w.pool.workerChannel <- w
 	log.Printf("Worker %s request %d complete!\n", w.Hostname, w.requestCount)
 }
 
+// GetRequestCount accessor
 func (w *Worker) GetRequestCount() int {
 	return w.requestCount
 }
@@ -137,8 +139,10 @@ func (p *Pool) Start() {
 	}
 }
 
+// GetWorker retrieves a worker from the pool and updates the pools
+// state to indicate that a request is in progress
 func (p *Pool) GetWorker() *Worker {
-	p.requestCount += 1
+	p.requestCount++
 	log.Printf("Pool starting request %d...", p.requestCount)
 	return <-p.workerChannel
 }

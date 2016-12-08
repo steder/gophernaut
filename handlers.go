@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// AdminContext ... Simple struct for storing input to our admin template
 type AdminContext struct {
 	Pool   Pool
 	Config *Config
