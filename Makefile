@@ -4,6 +4,4 @@ all:
 	go test -v $(go list ./... | grep -v /vendor/) -coverpkg github.com/steder/gophernaut
 
 deps:
-	go get github.com/Masterminds/glide
-	go get golang.org/x/tools/cmd/stringer
-	glide install
+	dep ensure
