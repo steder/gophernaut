@@ -1,3 +1,0 @@
-package: github.com/steder/gophernaut
-import:
-- package: gopkg.in/yaml.v2
