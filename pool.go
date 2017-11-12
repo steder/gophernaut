@@ -2,9 +2,11 @@ package gophernaut
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -148,7 +150,7 @@ func (p *Pool) GetWorker() *Worker {
 }
 
 // ManageProcesses waits for processes to start waits for graceful shutdown
-func (p *Pool) ManageProcesses() {
+func (p *Pool) ManageProcesses(s *http.Server) {
 	for event := range p.eventsChannel {
 		switch event {
 		case Shutdown:
@@ -158,7 +160,8 @@ func (p *Pool) ManageProcesses() {
 		}
 		if p.processCount == p.stoppedCount {
 			log.Printf("%d workers stopped, shutting down.\n", p.processCount)
-			os.Exit(1)
+			c := context.Background()
+			s.Shutdown(c)
 		}
 	}
 }
